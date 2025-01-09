@@ -1,8 +1,8 @@
 # SHLD MIDI file to Ripchord Preset
 
-Just a basic Python script for converting [SHLD MIDI Chord Pack](https://github.com/ldrolez/free-midi-chords) into [Ripchord](https://trackbout.com/) presets (so I could use them with my [Norns-Ripchord](https://github.com/handeyeco/norns-ripchord) script for [Norns](https://monome.org/docs/norns/)).
+Just a basic Python script for converting the [SHLD MIDI Chord Pack](https://github.com/ldrolez/free-midi-chords) into [Ripchord](https://trackbout.com/) presets.
 
----
+[If you just want the presets, they're on my blog.](https://handeyeco.github.io/tech-blog/shld-ripchord/)
 
 ## Usage
 
