@@ -11,33 +11,45 @@ white_key_intervals = [2, 2, 1, 2, 2, 2, 1]
   
 
 def read_midi_file(source_path):
+  # make sure this is a MIDI file
   name_match = name_regex.match(source_path)
   if not name_match:
     return
-  print(source_path)
+
+  # get chord names from file name
+  chord_names = name_match.group(1).split()
 
   prog_dict = {}
   chord_count = 0
   trig_note = 60
-  chord_names = name_match.group(1).split()
   chord_notes = []
 
   midi_file = mido.MidiFile(source_path)
   for msg in midi_file:
+    # collect groups of "note on" MIDI messages
     if msg.type == "note_on":
       chord_notes.append(msg.note)
+
+    # when we hit a "note off" MIDI message
+    # convert collected "note on" messages into a chord
     elif msg.type == "note_off" and len(chord_notes) > 0:
+      # if we have more chords than chord names, something is wrong
       if chord_count > len(chord_names):
         print("!!! Something sus with: " + source_path)
+
+      # create a new mapping: trigger + name + chord
       prog_dict[trig_note] = {}
       prog_dict[trig_note]["notes"] = chord_notes
       prog_dict[trig_note]["name"] = chord_names[chord_count]
+
       # reset
+      # this just puts all the mappings on white keys
       trig_note += white_key_intervals[chord_count % len(white_key_intervals)]
       chord_count += 1
       chord_notes = []
   return prog_dict
 
+# not very interesting, just converting a dict to XML
 def write_ripchord_file(prog_dict, dest_path):
   root_tag = ET.Element('ripchord')
   preset_tag = ET.SubElement(root_tag, 'preset')
@@ -50,7 +62,7 @@ def write_ripchord_file(prog_dict, dest_path):
   tree = ET.ElementTree(root_tag)
   ET.indent(tree)
   os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-  tree.write(dest_path)
+  tree.write(dest_path, encoding='utf-8', xml_declaration=True)
   
 
 def main():
@@ -63,11 +75,6 @@ def main():
       os.remove(path)
 
   # generate files
-  # for filename in os.listdir(input_folder):
-  #   prog_dict = read_midi_file(filename)
-  #   if prog_dict:
-  #     write_ripchord_file(prog_dict, filename)
-  
   for root, dirs, files in os.walk(input_folder):
     for file in files:
       source_path = os.path.join(root, file)
