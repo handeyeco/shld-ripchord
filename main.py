@@ -98,6 +98,7 @@ def main():
         output_subdir = os.path.join(output_folder, relative_path)
         os.makedirs(output_subdir, exist_ok=True)
         output_file = os.path.join(output_subdir, file)
+        output_file = os.path.splitext(output_file)[0]+'.rpc'
 
       # Create a new Ripchord preset
       write_ripchord_file(prog_dict, output_file)
