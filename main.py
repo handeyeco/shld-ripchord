@@ -8,7 +8,7 @@ name_regex = re.compile('.+ - (.+).mid')
 input_folder = "input"
 output_folder = "output"
 white_key_intervals = [2, 2, 1, 2, 2, 2, 1]
-  
+issues = False
 
 def read_midi_file(source_path):
   # make sure this is a MIDI file
@@ -34,8 +34,12 @@ def read_midi_file(source_path):
     # convert collected "note on" messages into a chord
     elif msg.type == "note_off" and len(chord_notes) > 0:
       # if we have more chords than chord names, something is wrong
-      if chord_count > len(chord_names):
+      if chord_count >= len(chord_names):
+        global issues
+        issues = True
         print("!!! Something sus with: " + source_path)
+        print("!!! Skipping: " + source_path)
+        return
 
       # create a new mapping: trigger + name + chord
       prog_dict[trig_note] = {}
@@ -77,25 +81,30 @@ def main():
   # generate files
   for root, dirs, files in os.walk(input_folder):
     for file in files:
-      source_path = os.path.join(root, file)
-
-      # split root path
-      path_parts = os.path.split(root)
-      # filter empty strings
-      path_parts = [part for part in path_parts if part]
-      # remove input dir
-      path_parts = path_parts[1:]
-      # replace file extension
-      new_name = os.path.splitext(file)[0]+'.rpc'
-      # create new file path
-      dest_path = os.path.join(output_folder, *path_parts, new_name)
-
       # Read the MIDI file
-      prog_dict = read_midi_file(source_path)
-      if prog_dict:
-        # Create a new Ripchord preset
-        write_ripchord_file(prog_dict, dest_path)
+      input_file = os.path.join(root, file)
+      prog_dict = read_midi_file(input_file)
 
-  print("Done")
+      if not prog_dict:
+        continue
+
+      # Check if we're at the top level of the directory
+      if root == input_folder:
+        # If it's at the top level, we use the filename directly (no subdirectories).
+        output_file = os.path.join(output_folder, file)
+      else:
+        # If it's inside a subdirectory, preserve the subdirectory structure
+        relative_path = os.path.relpath(root, input_folder)
+        output_subdir = os.path.join(output_folder, relative_path)
+        os.makedirs(output_subdir, exist_ok=True)
+        output_file = os.path.join(output_subdir, file)
+
+      # Create a new Ripchord preset
+      write_ripchord_file(prog_dict, output_file)
+
+  if issues:
+    print("Done, with problems")
+  else:
+    print("Done, without problems")
 
 main()
